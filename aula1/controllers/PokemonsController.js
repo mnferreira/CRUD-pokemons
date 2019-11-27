@@ -60,15 +60,18 @@ const remove = (request, response) => {
 const update = (request, response) => {
   const id = request.params.id
   const pokemonUpdate = request.body
+  const dataInicio = request.body.dataInicio
+  const dataFim = request.body.dataFim
   const options = { new: true }
+  const calculoNivel = (Math.abs(new Date(dataInicio) - new Date(dataFim)) / 3600000) / 4
 
   pokemonsModel.findByIdAndUpdate(
     id,
-    pokemonUpdate,
+    {nivel: calculoNivel},
     options,
     (error, pokemon) => {
       if (error) {
-        return response.status(500).sned(error)
+        return response.status(500).send(error)
       }
 
       if (pokemon) {

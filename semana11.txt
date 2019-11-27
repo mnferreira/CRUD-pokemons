@@ -1,0 +1,22 @@
+SEMANA 11
+
+npm start
+
+obs: console.log (printar para verificação)
+console.info (print fixo)
+
+eslint; linter
+
+creat - inserir um novo registro
+read - listar
+update - atualizar
+delete - apagar
+
+resources (rotas principais) geralmente são criadas no plural: ex - pokemons
+
+const options = {new: true} - instancia um objeto e traz ele atualizado
+
+----
+depois de dar o git clone, dar os seguintes comandos:
+ - npm install
+ - npm start
