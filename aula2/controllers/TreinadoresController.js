@@ -122,6 +122,52 @@ const treinarPokemon = async (request, response) => {
     return response.status(200).send(treinador)
   })
 }
+
+const buscarPokemon = async (request,response) => {
+  const treinadorId = request.params.treinadorId
+  const pokemonId = request.params.pokemonId
+
+  const treinador = await treinadoresModel.findById(treinadorId)
+  const pokemon = treinador.pokemons.find((pokemon) => pokemonId == pokemon._id)  //Obs: pokemon._id é um ObjectId (tipo do MongoDB)
+
+  if (!pokemon) {
+    return response.status(500).send("error")
+  }
+
+  return response.status(200).send(pokemon)
+  }
+
+  const getAllPokemons = async (request, response) => {
+    const treinadorId = request.params.treinadorId
+    const treinador = await treinadoresModel.findById(treinadorId)
+  
+    if (treinador) {
+      return response.status(200).send(treinador.pokemons)
+  }
+      return response.status(404).send("treinador não encontrado")
+  }
+
+
+  const updatePokemon = (request, response) => {
+    const treinadorId = request.params.treinadorId
+    const PokemonId = request.params.pokemonId
+
+    treinadoresModel.findByOneAndUpdate( 
+      {_id: treinadorId, 'pokemons.$._id': pokemonId}, //filtros que identificam o id que vamos atualizar
+      { $set: { //desta maneira se passa os campos que pretende atualizar. SET é usado em arrays, quando não se sabe ao certo a posição
+        'pokemons.$.nome': pokemon.nome,
+        'pokemons.$.foto': pokemon.foto
+      }},
+      {new: true},
+      (error, treinador) => {
+        if (error) {
+          return response.status(200).send(error)
+        }
+          return response.status(200).send(treinador)
+      })
+  }
+
+
 module.exports = {
   getAll,
   getById,
@@ -129,5 +175,7 @@ module.exports = {
   remove,
   update,
   addPokemon, 
-  treinarPokemon
+  treinarPokemon,
+  buscarPokemon,
+  getAllPokemons
 }
