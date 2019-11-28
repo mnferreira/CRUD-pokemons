@@ -98,11 +98,36 @@ const addPokemon = async (request, response) => {
   })
 }
 
+const calcularNivel = (inicio, fim, nivelAtual) => {
+  const novoNivel = (Math.abs(new Date(inicio) - new Date(fim)) / 3600000) / 4
+
+  return novoNivel + nivelAtual;
+}
+
+const treinarPokemon = async (request, response) => {
+  const treinadorId = request.params.treinadorId
+  const pokemonId = request.params.pokemonId
+  const inicio = request.body.inicio
+  const fim = request.body.fim
+  const treinador = await treinadoresModel.findById(treinadorId)
+  const pokemon = treinador.pokemons.find((pokemon) => pokemonId == pokemon._id)
+  const novoNivel = calcularnNivel(inicio, fim, pokemon.nivel)
+
+  pokemon.nivel = novoNivel
+  treinador.save((error) => {
+    if (error) {
+      return response.status(500).send(error)
+    }
+
+    return response.status(200).send(treinador)
+  })
+}
 module.exports = {
   getAll,
   getById,
   add,
   remove,
   update,
-  addPokemon
+  addPokemon, 
+  treinarPokemon
 }

@@ -9,7 +9,7 @@ const PORT = 3000
 app.use(cors())
 app.use(bodyParser.json())
 app.use('/pokemons', pokemons)
-app.use('/treinadores', treinadores)
+app.use('/treinadores', treinadores) //resource
 
 app.get('/', (request, response) => {
   response.send('Olá, mundo!')
