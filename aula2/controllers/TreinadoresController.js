@@ -177,5 +177,6 @@ module.exports = {
   addPokemon, 
   treinarPokemon,
   buscarPokemon,
-  getAllPokemons
+  getAllPokemons,
+  updatePokemon
 }
