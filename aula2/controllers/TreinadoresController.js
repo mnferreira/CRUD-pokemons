@@ -2,6 +2,7 @@ const { connect } = require('../models/Repository')
 const treinadoresModel = require('../models/TreinadoresSchema')
 const { pokemonsModel } = require('../models/PokemonsSchema')
 const bcrypt = require('bcryptjs')
+
 connect()
 
 const getAll = (request, response) => {
@@ -31,8 +32,8 @@ const getById = (request, response) => {
 }
 
 const add = (request, response) => {
-  const senhaCriptografada = bcrypt.hashSync(request.body.senha)
-  request.body.senha = senhaCriptografada
+  const senhaCriptografada = bcrypt.hashSync(request.body.senha) //hashSync indica que a função é síncrona
+  request.body.senha = senhaCriptografada //o body irá conter a senha criptografada ao invés da senha que o usuário coloca
   const novoTreinador = new treinadoresModel(request.body)
 
   novoTreinador.save((error) => {
@@ -43,6 +44,41 @@ const add = (request, response) => {
     return response.status(201).send(novoTreinador)
   })
 }
+
+//Para não alterar o objeto original:
+// const add = (request, response) => {
+//   const senhaCriptografada = bcrypt.hashSync(request.body.senha) //hashSync indica que a função é síncrona
+//   const novoObj = New Object (request.body)
+//   novoObj.senha = senhaCriptografada //o body irá conter a senha criptografada ao invés da senha que o usuário coloca
+//   const novoTreinador = new treinadoresModel(request.body)
+
+//   novoTreinador.save((error) => {
+//     if (error) {
+//       return response.status(500).send(error)
+//     }
+
+//     return response.status(201).send(novoTreinador)
+//   })
+// }
+
+const login = async (request, response) => {
+  const email = request.body.email
+  const senha = request.body.senha
+  const treinador = await treinadoresModel.findOne({email})
+  if (!treinador){
+    return response.status(404).send('email inválido')
+  }
+
+  const senhaValida = bcrypt.compareSync(senha, treinador.senha) // compareSync = compara uma senha hasheriada e outra não
+
+  if (senhaValida) {
+    return response.status(200).send('usuário logado')
+  }
+  return response.status(401).send('senha inválidos')
+}
+
+// 401 - unauthorized - usuário não autenticado
+// 403 - forbidden - usuário não permitido a acessar a página, porém autenticado
 
 const remove = (request, response) => {
   const id = request.params.id
@@ -69,9 +105,15 @@ const update = (request, response) => {
     id,
     treinadorUpdate,
     options,
+    {_id: id},
+    { $set: { 
+      'treinadoresModel.$.nome': treinadores.nome,
+      'treinadoresModel.$.foto': treinadores.foto,
+      'treinadoresModel.$.pokemons': treinadores.pokemons
+    }},
     (error, treinador) => {
       if (error) {
-        return response.status(500).sned(error)
+        return response.status(500).send(error)
       }
 
       if (treinador) {
@@ -130,7 +172,10 @@ const buscarPokemon = async (request,response) => {
   const pokemonId = request.params.pokemonId
 
   const treinador = await treinadoresModel.findById(treinadorId)
-  const pokemon = treinador.pokemons.find((pokemon) => pokemonId == pokemon._id)  //Obs: pokemon._id é um ObjectId (tipo do MongoDB)
+  const pokemon = treinador.pokemons.find((pokemon) => {
+    return pokemonId == pokemon._id
+  
+  })  //Obs: pokemon._id é um ObjectId (tipo do MongoDB)
 
   if (!pokemon) {
     return response.status(500).send("error")
@@ -152,11 +197,12 @@ const buscarPokemon = async (request,response) => {
 
   const updatePokemon = (request, response) => {
     const treinadorId = request.params.treinadorId
-    const PokemonId = request.params.pokemonId
+    const pokemonId = request.params.pokemonId
 
     treinadoresModel.findByOneAndUpdate( 
-      {_id: treinadorId, 'pokemons.$._id': pokemonId}, //filtros que identificam o id que vamos atualizar
-      { $set: { //desta maneira se passa os campos que pretende atualizar. SET é usado em arrays, quando não se sabe ao certo a posição
+      {_id: treinadorId, 'pokemons.$._id': pokemonId}, //filtros (query) que identificam o id que vamos atualizar
+      //pokemon,  - dessa maneira atualiza todas as propriedades
+      { $set: { //desta maneira se passa os campos que pretende atualizar. SET (set operator) é usado em arrays, quando não se sabe ao certo o índice dentro do array que se pretende atualizar
         'pokemons.$.nome': pokemon.nome,
         'pokemons.$.foto': pokemon.foto
       }},
@@ -180,5 +226,6 @@ module.exports = {
   treinarPokemon,
   buscarPokemon,
   getAllPokemons,
-  updatePokemon
+  updatePokemon,
+  login
 }
