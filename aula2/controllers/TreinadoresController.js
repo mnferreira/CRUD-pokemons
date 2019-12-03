@@ -2,8 +2,15 @@ const { connect } = require('../models/Repository')
 const treinadoresModel = require('../models/TreinadoresSchema')
 const { pokemonsModel } = require('../models/PokemonsSchema')
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 connect()
+
+const calcularNivel = (inicio, fim, nivelAtual) => {
+  const diff = Math.abs(new Date(inicio) - new Date(fim)) / 3600000
+
+  return (diff / 4) + nivelAtual;
+}
 
 const getAll = (request, response) => {
   treinadoresModel.find((error, treinadores) => {
@@ -32,8 +39,8 @@ const getById = (request, response) => {
 }
 
 const add = (request, response) => {
-  const senhaCriptografada = bcrypt.hashSync(request.body.senha) //hashSync indica que a função é síncrona
-  request.body.senha = senhaCriptografada //o body irá conter a senha criptografada ao invés da senha que o usuário coloca
+  const senhaCriptografada = bcrypt.hashSync(request.body.senha) //hashSync indica que a função é síncrona. o método hash() pede async/await, pois retorna uma promise
+  request.body.senha = senhaCriptografada //substitui senha da request para a senha 'hasherizada' antes de criar um novo treinador
   const novoTreinador = new treinadoresModel(request.body)
 
   novoTreinador.save((error) => {
@@ -65,14 +72,18 @@ const login = async (request, response) => {
   const email = request.body.email
   const senha = request.body.senha
   const treinador = await treinadoresModel.findOne({email})
+  const senhaValida = bcrypt.compareSync(senha, treinador.senha) // compareSync = compara uma senha hasheriada e outra não. há retorno de um booleano
+  
   if (!treinador){
-    return response.status(404).send('email inválido')
+    return response.status(404).send('email inválido') // email deve ser válido, obrigatório e único
   }
 
-  const senhaValida = bcrypt.compareSync(senha, treinador.senha) // compareSync = compara uma senha hasheriada e outra não
-
   if (senhaValida) {
-    return response.status(200).send('usuário logado')
+    const token = jwt.sign(
+      {id: treinadorId, email: treinador.email},
+      PRIVATE_KEY // criar as variáveis com a chave pública e privada
+    )} // a criptografia é feita depois da validação do usuário
+    //return response.status(200).send('usuário logado')
   }
   return response.status(401).send('senha inválidos')
 }
@@ -128,10 +139,9 @@ const update = (request, response) => {
 const addPokemon = async (request, response) => {
   const treinadorId = request.params.treinadorId
   const pokemon = request.body
-  const options = { new: true }
   const novoPokemon = new pokemonsModel(pokemon)
   const treinador = await treinadoresModel.findById(treinadorId)
-
+  console.log(treinador, 'TAKI')
   treinador.pokemons.push(novoPokemon)
   treinador.save((error) => {
     if (error) {
